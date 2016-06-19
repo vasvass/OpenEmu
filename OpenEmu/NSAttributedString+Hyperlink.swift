@@ -26,17 +26,17 @@
 
 import Cocoa
 
-extension NSAttributedString {
+extension AttributedString {
     
     /// Returns an attributed string containing a hyperlink.
     /// - Parameter string: The text to use for the hyperlink.
     /// - Parameter URL: The URL of the hyperlink.
-    convenience init(string: String, hyperlinkURL URL: NSURL) {
+    convenience init(string: String, hyperlinkURL URL: Foundation.URL) {
         
         let attributes = [
-            NSLinkAttributeName: URL.absoluteString,
-            NSForegroundColorAttributeName: NSColor.blueColor(),
-            NSUnderlineStyleAttributeName: NSUnderlineStyle.StyleSingle.rawValue
+            NSLinkAttributeName: URL.absoluteString!,
+            NSForegroundColorAttributeName: NSColor.blue(),
+            NSUnderlineStyleAttributeName: NSUnderlineStyle.styleSingle.rawValue
         ]
         
         self.init(string: string, attributes: attributes)

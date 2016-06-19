@@ -31,7 +31,7 @@ extension NSWindow {
     var fullScreen: Bool {
         @objc(isFullScreen)
         get {
-            return styleMask & NSFullScreenWindowMask == NSFullScreenWindowMask
+            return styleMask.contains(.fullScreen)
         }
     }
 }

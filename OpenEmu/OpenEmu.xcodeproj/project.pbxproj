@@ -1735,7 +1735,6 @@
 		3C335C911C70E49300E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/OEPrefLibraryController.strings"; sourceTree = "<group>"; };
 		3C335C921C70E49400E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/OECollectionViewController.strings"; sourceTree = "<group>"; };
 		3C335C931C70E49400E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/OELibraryController.strings"; sourceTree = "<group>"; };
-		3C335C941C70E49400E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Preferences.strings"; sourceTree = "<group>"; };
 		3C335C951C70E49400E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/MainMenu.strings"; sourceTree = "<group>"; };
 		3C335C961C70E49400E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/OEGameScanner.strings"; sourceTree = "<group>"; };
 		3C335C971C70E49500E33B79 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/OESystemPicker.strings"; sourceTree = "<group>"; };
@@ -7065,6 +7064,9 @@
 					87FBC08D1C0790B400AECF5A = {
 						CreatedOnToolsVersion = 7.1.1;
 					};
+					8D15AC270486D014006FF6A4 = {
+						LastSwiftMigration = 0800;
+					};
 				};
 			};
 			buildConfigurationList = C05733CB08A9546B00998B17 /* Build configuration list for PBXProject "OpenEmu" */;
@@ -11502,6 +11504,7 @@
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "OpenEmu-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
@@ -11542,6 +11545,7 @@
 				PRODUCT_NAME = OpenEmu;
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "OpenEmu-Bridging-Header.h";
+				SWIFT_VERSION = 3.0;
 				VALID_ARCHS = x86_64;
 			};
 			name = Release;

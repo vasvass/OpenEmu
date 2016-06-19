@@ -28,9 +28,9 @@ import Foundation
 
 extension NSMutableDictionary {
     
-    func popObjectForKey(key: String) -> AnyObject? {
+    func popObjectForKey(_ key: String) -> AnyObject? {
         let result = self[key]
-        removeObjectForKey(key)
+        removeObject(forKey: key)
         return result
     }
 }
