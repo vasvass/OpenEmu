@@ -178,7 +178,8 @@ class NinePartImage: NSImage {
 
 extension NSImage {
     
-    func subImageFromRect(_ rect: NSRect) -> NSImage {
+    @objc(subImageFromRect:)
+    func subimage(from rect: NSRect) -> NSImage {
         
         return NSImage(size: rect.size, flipped: false) { [unowned self] dstRect in
             self.draw(in: dstRect,
@@ -234,7 +235,7 @@ extension NSImage {
             if !rect.isEmpty {
                 var subImageRect = rect
                 subImageRect.origin.y = size.height - rect.origin.y - rect.height
-                return self.subImageFromRect(subImageRect)
+                return self.subimage(from: subImageRect)
             } else {
                 return nil
             }
@@ -255,7 +256,8 @@ extension NSImage {
         }
     }
     
-    func ninePartImageWithStretchedRect(_ rect: NSRect) -> NSImage {
+    @objc(ninePartImageWithStretchedRect:)
+    func ninePartImage(withStretched rect: NSRect) -> NSImage {
         
         let top    = NSRect(x: 0, y: rect.maxY, width: size.width, height: size.height - rect.maxY)
         let middle = NSRect(x: 0, y: rect.minY, width: size.width, height: rect.height)

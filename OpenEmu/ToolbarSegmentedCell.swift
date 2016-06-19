@@ -65,8 +65,8 @@ class ToolbarSegmentedCell: NSSegmentedCell {
         
         let segmentWidth = cellFrame.width / CGFloat(segmentCount)
         
-        drawBackgroundLayerInFrame(cellFrame)
-        drawTopHighlightEdgeLayerInFrame(cellFrame)
+        drawBackgroundLayer(inFrame: cellFrame)
+        drawTopHighlightEdgeLayer(inFrame: cellFrame)
 
         for segment in 0..<segmentCount {
             
@@ -78,27 +78,27 @@ class ToolbarSegmentedCell: NSSegmentedCell {
             drawSegment(segment, inFrame: segmentRect, with: controlView)
         }
         
-        drawBorderLayerInFrame(cellFrame)
+        drawBorderLayer(inFrame: cellFrame)
     }
     
     // MARK: - Layers
     
-    func controlPathInFrame(_ cellFrame: NSRect) -> NSBezierPath {
+    func controlPath(inFrame cellFrame: NSRect) -> NSBezierPath {
         return NSBezierPath(roundedRect: cellFrame, xRadius: cornerRadius, yRadius: cornerRadius)
     }
     
-    func drawBackgroundLayerInFrame(_ cellFrame: NSRect) {
+    func drawBackgroundLayer(inFrame cellFrame: NSRect) {
         
-        let path = controlPathInFrame(cellFrame)
+        let path = controlPath(inFrame: cellFrame)
         
         backgroundGradient.draw(in: path, angle: 90)
     }
     
-    func drawTopHighlightEdgeLayerInFrame(_ cellFrame: NSRect) {
+    func drawTopHighlightEdgeLayer(inFrame cellFrame: NSRect) {
         
         NSGraphicsContext.saveGraphicsState()
         
-        let path = controlPathInFrame(cellFrame)
+        let path = controlPath(inFrame: cellFrame)
         
         path.setClip()
         
@@ -109,9 +109,9 @@ class ToolbarSegmentedCell: NSSegmentedCell {
         NSGraphicsContext.restoreGraphicsState()
     }
     
-    func drawBorderLayerInFrame(_ cellFrame: NSRect) {
+    func drawBorderLayer(inFrame cellFrame: NSRect) {
         
-        let path = controlPathInFrame(cellFrame.insetBy(dx: 0.5, dy: 0.5))
+        let path = controlPath(inFrame: cellFrame.insetBy(dx: 0.5, dy: 0.5))
         
         borderColor.set()
         
@@ -145,7 +145,7 @@ class ToolbarSegmentedCell: NSSegmentedCell {
         
         if segment == firstSegment {
             
-            return NSBezierPath.roundedRectInRect(frame,
+            return NSBezierPath.roundedRect(in: frame,
                 topLeftCornerRadius: cornerRadius,
                 topRightCornerRadius: 0,
                 bottomLeftCornerRadius: cornerRadius,
@@ -153,7 +153,7 @@ class ToolbarSegmentedCell: NSSegmentedCell {
             
         } else if segment == lastSegment {
             
-            return NSBezierPath.roundedRectInRect(frame,
+            return NSBezierPath.roundedRect(in: frame,
                 topLeftCornerRadius: 0,
                 topRightCornerRadius: cornerRadius,
                 bottomLeftCornerRadius: 0,
@@ -195,7 +195,7 @@ class ToolbarSegmentedCell: NSSegmentedCell {
             
             NSGraphicsContext.saveGraphicsState()
             
-            controlPathInFrame(frame).setClip()
+            controlPath(inFrame: frame).setClip()
             
             topActiveGradient.draw(in: segmentPath, angle: 90)
             horizontalActiveGradient.draw(in: segmentPath, angle: 0)
@@ -314,7 +314,7 @@ extension NSBezierPath {
     /// - Parameter bottomLeftCornerRadius: The radius of the bottom-left corner.
     /// - Parameter bottomRightCornerRadius: The radius of the bottom-right corner.
     /// - Returns: A path with rounded corners based on the given corner radiuses.
-    static func roundedRectInRect(_ rect: NSRect, topLeftCornerRadius: CGFloat, topRightCornerRadius: CGFloat, bottomLeftCornerRadius: CGFloat, bottomRightCornerRadius: CGFloat) -> NSBezierPath {
+    static func roundedRect(in rect: NSRect, topLeftCornerRadius: CGFloat, topRightCornerRadius: CGFloat, bottomLeftCornerRadius: CGFloat, bottomRightCornerRadius: CGFloat) -> NSBezierPath {
         
         let path = NSBezierPath()
         
