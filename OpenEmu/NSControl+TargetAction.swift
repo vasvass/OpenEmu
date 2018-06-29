@@ -26,12 +26,12 @@
 
 import Cocoa
 
-extension NSControl {
+@objc extension NSControl {
     
     /// A convenience method to set both the target and action.
     /// - Parameter target: The target of the control.
     /// - Parameter action: The action message that will be sent to the target.
-    func setTarget(target: AnyObject?, andAction action: Selector) {
+    func setTarget(_ target: AnyObject?, andAction action: Selector) {
         self.target = target
         self.action = action
     }

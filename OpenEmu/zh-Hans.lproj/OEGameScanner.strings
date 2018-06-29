@@ -2,17 +2,11 @@
 /* Class = "NSTableColumn"; headerCell.title = "Path"; ObjectID = "75"; */
 "75.headerCell.title" = "路径";
 
-/* Class = "NSTextFieldCell"; title = "Text Cell"; ObjectID = "78"; */
-"78.title" = "Text Cell";
-
-/* Class = "NSButtonCell"; title = "Check"; ObjectID = "124"; */
-"124.title" = "检查";
-
-/* Class = "NSTextFieldCell"; title = "Fix Import Issues:"; ObjectID = "127"; */
-"127.title" = "修复导入问题:";
-
-/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "132"; */
-"132.title" = "OtherViews";
+/* Class = "NSTextFieldCell"; title = "Resolve Issues:"; ObjectID = "0HB-UU-ULs"; */
+"0HB-UU-ULs.title" = "修复导入问题:";
 
 /* Class = "NSButtonCell"; title = "Apply"; ObjectID = "139"; */
 "139.title" = "应用";
+
+/* Class = "NSTextFieldCell"; title = "Import Into:"; ObjectID = "QPy-Ob-0E6"; */
+"QPy-Ob-0E6.title" = "Import Into:";   // TODO

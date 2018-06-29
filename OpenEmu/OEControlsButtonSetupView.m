@@ -27,14 +27,16 @@
 #import "OEControlsButtonSetupView.h"
 
 #import "OEControlsKeyButton.h"
-#import "OEControlsKeyLabelCell.h"
-#import "OEControlsKeyHeadlineCell.h"
 #import "OEControlsKeySeparatorView.h"
 #import "OEControlsSectionTitleView.h"
+#import "OEControlsKeyHeadlineCell.h"
+#import "OEControlsKeyLabelCell.h"
 
 #import "OEUIDrawingUtils.h"
 
 #import <OpenEmuSystem/OpenEmuSystem.h>
+
+#import "OpenEmu-Swift.h"
 
 @import Quartz;
 

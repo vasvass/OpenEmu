@@ -49,7 +49,7 @@ typedef void (^OEImportItemCompletionBlock)(NSManagedObjectID*);
 
 @property (copy) NSURL *URL;
 @property (copy) NSURL *sourceURL;
-@property (copy) NSManagedObjectID *collectionID;
+@property (nullable, copy) NSManagedObjectID *collectionID;
 @property (nonatomic, readonly) NSManagedObjectID *romObjectID;
 @property (nullable) NSURL *extractedFileURL;
 
@@ -61,7 +61,7 @@ typedef void (^OEImportItemCompletionBlock)(NSManagedObjectID*);
 @property (copy, nullable) OEImportItemCompletionBlock completionHandler;
 @property OEROMImporter *importer;
 
-@property BOOL checked;
+@property (getter=isChecked) BOOL checked;
 
 @end
 

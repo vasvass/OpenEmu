@@ -24,7 +24,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "OEDBScreenshot.h"
+#import "OEDBScreenshot+CoreDataProperties.h"
 #import "OEDBRom.h"
 
 #import "OELibraryDatabase.h"
@@ -85,12 +85,10 @@ NSString * const OEDBScreenshotImportRequired = @"OEDBScreenshotImportRequired";
 
 #pragma mark - Core Data Properties
 
-@dynamic location, name, timestamp, userDescription, rom;
-
 - (void)setURL:(NSURL *)url
 {
     NSURL *screenshotDirectory = self.libraryDatabase.screenshotFolderURL;
-    self.location = [url urlRelativeToURL:screenshotDirectory].relativeString;
+    self.location = [url URLRelativeToURL:screenshotDirectory].relativeString;
 }
 
 - (NSURL *)URL
@@ -133,6 +131,23 @@ NSString * const OEDBScreenshotImportRequired = @"OEDBScreenshotImportRequired";
         self.URL = targetURL;
     }
 }
+
+
+#pragma mark - QLPreviewItem
+
+
+- (NSURL *)previewItemURL
+{
+    return [self URL];
+}
+
+
+- (NSString *)previewItemTitle
+{
+    return [self name];
+}
+
+
 @end
 
 NS_ASSUME_NONNULL_END

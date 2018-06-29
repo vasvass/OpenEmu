@@ -29,6 +29,7 @@
 #import "OEDBRom.h"
 #import "OEDBGame.h"
 #import "OEDBSystem.h"
+#import "OEDBSystem+CoreDataProperties.h"
 #import "OECorePlugin.h"
 
 #import "OpenEmu-Swift.h"
@@ -65,7 +66,7 @@ NSString *const OESaveStateQuicksaveName        = @"OESpecialState_quick";
     NSURL *saveStateDirectoryURL = context.libraryDatabase.stateFolderURL;
 
     // normalize URL for lookup
-    NSURL  *relativeURL = [url urlRelativeToURL:saveStateDirectoryURL];
+    NSURL  *relativeURL = [url URLRelativeToURL:saveStateDirectoryURL];
     NSString *urlString = [self OE_stringByRemovingTrailingSlash:relativeURL.relativeString];
 
     // query core data
@@ -601,8 +602,7 @@ NSString *const OESaveStateQuicksaveName        = @"OESpecialState_quick";
 
 #pragma mark - Data Model Properties
 
-@dynamic name, userDescription, timestamp;
-@dynamic coreIdentifier, location, coreVersion;
+@dynamic location;
 
 - (NSURL *)URL
 {
@@ -613,7 +613,7 @@ NSString *const OESaveStateQuicksaveName        = @"OESpecialState_quick";
 - (void)setURL:(NSURL *)url
 {
     NSURL *saveStateDirectoryURL = self.libraryDatabase.stateFolderURL;
-    NSString *string = [url urlRelativeToURL:saveStateDirectoryURL].relativeString;
+    NSString *string = [url URLRelativeToURL:saveStateDirectoryURL].relativeString;
 
     // make sure we don't save trailing '/' for save state bundles
     string = [[self class] OE_stringByRemovingTrailingSlash:string];
@@ -640,10 +640,6 @@ NSString *const OESaveStateQuicksaveName        = @"OESpecialState_quick";
 {
     return self.rom.game.system.systemIdentifier;
 }
-
-#pragma mark - Data Model Relationships
-
-@dynamic rom;
 
 @end
 

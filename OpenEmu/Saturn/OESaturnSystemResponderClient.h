@@ -30,24 +30,32 @@
 
 typedef enum _OESaturnButton
 {
-	OESaturnButtonUp,
-	OESaturnButtonDown,
-	OESaturnButtonLeft,
-	OESaturnButtonRight,
-	OESaturnButtonA,
-	OESaturnButtonB,
-	OESaturnButtonC,
-	OESaturnButtonX,
+    OESaturnButtonUp,
+    OESaturnButtonDown,
+    OESaturnButtonLeft,
+    OESaturnButtonRight,
+    OESaturnButtonA,
+    OESaturnButtonB,
+    OESaturnButtonC,
+    OESaturnButtonX,
     OESaturnButtonY,
     OESaturnButtonZ,
     OESaturnButtonL,
     OESaturnButtonR,
     OESaturnButtonStart,
-	OESaturnButtonCount
+    OESaturnButtonAnalogMode,
+    OESaturnLeftAnalogUp,
+    OESaturnLeftAnalogDown,
+    OESaturnLeftAnalogLeft,
+    OESaturnLeftAnalogRight,
+    OESaturnAnalogL,
+    OESaturnAnalogR,
+    OESaturnButtonCount
 } OESaturnButton;
 
 @protocol OESaturnSystemResponderClient <OESystemResponderClient, NSObject>
 
+- (oneway void)didMoveSaturnJoystickDirection:(OESaturnButton)button withValue:(CGFloat)value forPlayer:(NSUInteger)player;
 - (oneway void)didPushSaturnButton:(OESaturnButton)button forPlayer:(NSUInteger)player;
 - (oneway void)didReleaseSaturnButton:(OESaturnButton)button forPlayer:(NSUInteger)player;
 

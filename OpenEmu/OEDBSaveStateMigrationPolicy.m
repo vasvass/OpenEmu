@@ -26,6 +26,7 @@
 
 #import "OEDBSaveStateMigrationPolicy.h"
 #import "OELibraryDatabase.h"
+#import "NSArray+OEAdditions.h"
 
 #import "OpenEmu-Swift.h"
 
@@ -46,9 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
         NSString *location = url.absoluteString;
         if(location)
         {
-            NSArray *attributeMappings = mapping.attributeMappings;
+            NSArray<NSPropertyMapping *> *attributeMappings = mapping.attributeMappings;
             NSPropertyMapping *mapping = [attributeMappings firstObjectMatchingBlock:
-                                          ^ BOOL (id obj)
+                                          ^ BOOL (NSPropertyMapping *obj)
                                           {
                                               return [[obj name] isEqualToString:@"location"];
                                           }];
@@ -60,12 +61,12 @@ NS_ASSUME_NONNULL_BEGIN
         NSURL *romsFolderURL = self.stateFolderURL;
         NSString *urlString = [oldObject valueForKey:@"location"];
         NSURL *url = nil;
-        if([urlString rangeOfString:@"file://"].location == NSNotFound)
+        if(![urlString containsString:@"file://"])
             url = [NSURL URLWithString:urlString relativeToURL:romsFolderURL];
         else
             url = [NSURL URLWithString:urlString];
 
-        NSURL *relativeURL = [url urlRelativeToURL:romsFolderURL];
+        NSURL *relativeURL = [url URLRelativeToURL:romsFolderURL];
         NSString *location = relativeURL.relativeString;
         if(location)
         {
@@ -73,9 +74,9 @@ NS_ASSUME_NONNULL_BEGIN
             if([location characterAtIndex:location.length - 1] == '/')
                 location = [location substringToIndex:location.length - 1];
 
-            NSArray *attributeMappings = mapping.attributeMappings;
+            NSArray<NSPropertyMapping *> *attributeMappings = mapping.attributeMappings;
             NSPropertyMapping *mapping = [attributeMappings firstObjectMatchingBlock:
-                                          ^ BOOL (id obj)
+                                          ^ BOOL (NSPropertyMapping *obj)
                                           {
                                               return [[obj name] isEqualToString:@"location"];
                                           }];

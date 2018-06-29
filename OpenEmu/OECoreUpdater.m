@@ -34,13 +34,13 @@
 #import "OEHUDAlert.h"
 #import "OEButton.h"
 
-#import "OEDBGame.h"
-#import "OEDBSystem.h"
-#import "OEDBSaveState.h"
+#import "OEDBGame+CoreDataProperties.h"
+#import "OEDBSystem+CoreDataProperties.h"
+#import "OEDBSaveState+CoreDataProperties.h"
 
 NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
 
-@interface OECoreUpdater () <NSFileManagerDelegate, SUAppcastDelegate, SUUpdaterDelegate>
+@interface OECoreUpdater () <NSFileManagerDelegate, SUUpdaterDelegate>
 {
     NSMutableDictionary *_coresDict;
     BOOL autoInstall;
@@ -87,7 +87,7 @@ NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
              NSString *bundleID = [self lowerCaseID:[obj bundleIdentifier]];
              if(bundleID != nil)
              {
-                 [_coresDict setObject:aDownload forKey:bundleID];
+                 [self->_coresDict setObject:aDownload forKey:bundleID];
              }
              else
              {
@@ -108,7 +108,7 @@ NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
     [[_coresDict allValues] sortedArrayUsingComparator:
      ^ NSComparisonResult (id obj1, id obj2)
      {
-         return [[obj1 name] compare:[obj2 name]];
+         return [[obj1 name] localizedCaseInsensitiveCompare:[obj2 name]];
      }];
 
     [self didChangeValueForKey:@"coreList"];
@@ -132,6 +132,11 @@ NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
         {
             [updater setDelegate:self];
             [updater setFeedURL:[NSURL URLWithString:appcastURLString]];
+
+            // Core updates are silently installed on launch, so ensure there is no annoying update prompt from Sparkle
+            [updater setAutomaticallyChecksForUpdates:YES];
+            [updater setAutomaticallyDownloadsUpdates:YES];
+
             [updater resetUpdateCycle];
             [updater checkForUpdateInformation];
         }
@@ -160,7 +165,7 @@ NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
                 for(NSXMLElement *coreNode in coreNodes)
                 {
                     NSString *coreId = [self lowerCaseID:[[coreNode attributeForName:@"id"] stringValue]];
-                    if([_coresDict objectForKey:coreId] != nil) continue;
+                    if([self->_coresDict objectForKey:coreId] != nil) continue;
                     
                     OECoreDownload *download = [[OECoreDownload alloc] init];
                     [download setName:[[coreNode attributeForName:@"name"] stringValue]];
@@ -185,17 +190,21 @@ NSString *const OECoreUpdaterErrorDomain = @"OECoreUpdaterErrorDomain";
                     
                     NSURL *appcastURL = [NSURL URLWithString:[[coreNode attributeForName:@"appcastURL"] stringValue]];
                     download.appcast = [[SUAppcast alloc] init];
-                    [download.appcast setDelegate:self];
-                    
-                    if([fromModal boolValue])
-                        [[download appcast] performSelectorOnMainThread:@selector(fetchAppcastFromURL:) withObject:appcastURL waitUntilDone:NO modes:[NSArray arrayWithObject:NSModalPanelRunLoopMode]];
-                    else
-                        [[download appcast] performSelectorOnMainThread:@selector(fetchAppcastFromURL:) withObject:appcastURL waitUntilDone:NO];
-                    
-                    [_coresDict setObject:download forKey:coreId];
+
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [[download appcast] fetchAppcastFromURL:appcastURL inBackground:YES completionBlock:^(NSError *error) {
+                            if (error) {
+                                NSLog(@"%@", error);
+                            } else {
+                                [self appcastDidFinishLoading:[download appcast]];
+                            }
+                        }];
+                    });
+
+                    [self->_coresDict setObject:download forKey:coreId];
                 }
             }
-            
+
             [self OE_updateCoreList];
         });
     });

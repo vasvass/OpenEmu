@@ -67,7 +67,6 @@
 #import "OEPrefBiosController.h"
 #import "OEMainWindowController.h"
 #import "OELibraryGamesViewController.h"
-#import "OEGameScannerViewController.h"
 #import "OEDBSavedGamesMedia.h"
 
 #import "OpenEmu-Swift.h"
@@ -137,6 +136,8 @@ NSString * const OptionsKey = @"options";
 	[tableView setAllowsEmptySelection:YES];
 	[tableView setAllowsMultipleSelection:NO];
 	[tableView setAllowsTypeSelect:NO];
+    
+    [tableView reloadData];
 }
 
 - (void)OE_setupKeyDescription
@@ -169,12 +170,9 @@ NSString * const OptionsKey = @"options";
                               Button(@"Hide game scanner view", @selector(hideGameScannerView:)),
 
                               Group(@"HUD Bar / Gameplay"),
-                              NCheckbox(OEDontShowGameTitleInWindowKey, @"Use game name as window title"),
                               Checkbox(OEGameControlsBarCanDeleteSaveStatesKey, @"Can delete save states"),
                               NCheckbox(OEGameControlsBarHidesOptionButtonKey, @"Show options button"),
-                              Checkbox(OEForceCorePicker, @"Use gamecore picker"),
-                              Checkbox(OEShowSaveStateNotificationKey, @"Show quicksave notification during gameplay"),
-                              Checkbox(OEShowScreenShotNotificationKey, @"Show screenshot notification during gameplay"),
+                              Checkbox(OEShowNotificationsKey, @"Show notifications during gameplay"),
                               Checkbox(OESaveStateUseQuickSaveSlotsKey, @"Use quicksave slots"),
                               Checkbox(OEGameControlsBarShowsQuickSaveStateKey, @"Show quicksave in menu"),
                               Checkbox(OEGameControlsBarShowsAutoSaveStateKey, @"Show autosave in menu"),

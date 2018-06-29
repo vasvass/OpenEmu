@@ -32,7 +32,6 @@
 #import "OEDBScreenshot.h"
 
 #import "OEGameView.h"
-#import "OECorePickerController.h"
 #import "OEGameCoreManager.h"
 #import "OEThreadGameCoreManager.h"
 #import "OEXPCGameCoreManager.h"
@@ -61,10 +60,9 @@ NSString *const OEGameVolumeKey = @"volume";
 NSString *const OEGameDefaultVideoFilterKey = @"videoFilter";
 NSString *const OEGameSystemVideoFilterKeyFormat = @"videoFilter.%@";
 NSString *const OEGameCoresInBackgroundKey = @"gameCoreInBackgroundThread";
-NSString *const OEDontShowGameTitleInWindowKey = @"dontShowGameTitleInWindow";
 NSString *const OEAutoSwitchCoreAlertSuppressionKey = @"changeCoreWhenLoadingStateWitoutConfirmation";
 NSString *const OEBackgroundPauseKey = @"backgroundPause";
-NSString *const OEForceCorePicker = @"forceCorePicker";
+NSString *const OEBackgroundControllerPlayKey = @"backgroundControllerPlay";
 NSString *const OEGameViewControllerEmulationWillFinishNotification = @"OEGameViewControllerEmulationWillFinishNotification";
 NSString *const OEGameViewControllerEmulationDidFinishNotification = @"OEGameViewControllerEmulationDidFinishNotification";
 NSString *const OETakeNativeScreenshots = @"takeNativeScreenshots";
@@ -160,7 +158,7 @@ NSString *const OEScreenshotPropertiesKey = @"screenshotProperties";
 {
     [super viewWillDisappear];
 
-    [_controlsWindow hide];
+    [_controlsWindow hideAnimated:NO];
     [_controlsWindow setGameWindow:nil];
     [[self OE_rootWindow] removeChildWindow:_controlsWindow];
 }

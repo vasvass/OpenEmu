@@ -43,11 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @dynamic URL;
 
-// Data Model Properties
-@dynamic location, favorite, crc32, md5, lastPlayed, fileSize, playCount, playTime, archiveFileIndex, header, serial, fileName, source;
-
 // Data Model Relationships
-@dynamic game, saveStates, tosec;
+@dynamic tosec;
 
 #pragma mark -
 
@@ -58,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
     OELibraryDatabase *library = context.userInfo[OELibraryDatabaseUserInfoKey];
     NSURL *romFolderURL = library.romsFolderURL;
 
-    url = [url urlRelativeToURL:romFolderURL];
+    url = [url URLRelativeToURL:romFolderURL];
 
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"location == %@", url.relativeString];
     NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:[self entityName]];
@@ -111,7 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setURL:(nullable NSURL *)url
 {
     NSURL *romFolderURL = self.libraryDatabase.romsFolderURL;
-    self.location = [url urlRelativeToURL:romFolderURL]. relativeString;
+    self.location = [url URLRelativeToURL:romFolderURL]. relativeString;
 }
 
 - (nullable NSURL *)sourceURL
@@ -347,36 +344,23 @@ NS_ASSUME_NONNULL_BEGIN
 
         if(count == 1)
         {
-            NSString *path = url.path;
-            NSURL *baseURL = [NSURL fileURLWithPath:path.stringByDeletingLastPathComponent isDirectory:YES];
-            NSMutableArray *fileNames = @[ path.lastPathComponent ].mutableCopy;
-
-            if([[path.pathExtension lowercaseString] isEqualToString:@"cue"])
-            {
-                OECUESheet *sheet = [[OECUESheet alloc] initWithPath:path];
-                NSArray *additionalFileNames = sheet.referencedFileNames;
-                [fileNames addObjectsFromArray:additionalFileNames];
+            OEFile *file = [OEFile fileWithURL:url error:nil];
+            if (file) {
+                [[NSWorkspace sharedWorkspace] recycleURLs:file.allFileURLs completionHandler:nil];
             }
-            else if([path.pathExtension.lowercaseString isEqualToString:@"ccd"])
-            {
-                OECloneCD *ccd = [[OECloneCD alloc] initWithURL:url];
-                NSArray *additionalFileNames = ccd.referencedFileNames;
-                [fileNames addObjectsFromArray:additionalFileNames];
-            }
-
-            for(int i=0; i < [fileNames count]; i++){
-                NSString *fileName = fileNames[i];
-                NSURL *url = [NSURL fileURLWithPath:fileName isDirectory:NO relativeToURL:baseURL];
-                [fileNames replaceObjectAtIndex:i withObject:url];
-            }
-
-            [[NSWorkspace sharedWorkspace] recycleURLs:fileNames completionHandler:^(NSDictionary<NSURL *,NSURL *> * _Nonnull newURLs, NSError * _Nullable error) {}];
         } else DLog(@"Keeping file, other roms depent on it!");
     }
 
     if(!statesFlag)
     {
-        // TODO: remove states
+        if (self.saveStateCount) {
+            NSURL *statesFolderURL = [self.saveStates.anyObject.URL URLByDeletingLastPathComponent];
+
+            OEFile *file = [OEFile fileWithURL:statesFolderURL error:nil];
+            if (file) {
+                [[NSWorkspace sharedWorkspace] recycleURLs:file.allFileURLs completionHandler:nil];
+            }
+        }
     }
 
     [self.managedObjectContext deleteObject:self];

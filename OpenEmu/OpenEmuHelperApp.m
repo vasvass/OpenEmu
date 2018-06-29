@@ -61,8 +61,6 @@
 
 @implementation OpenEmuHelperApp
 {
-    void (^_startEmulationHandler)(void);
-    void (^_stopEmulationHandler)(void);
     OEIntSize _previousAspectSize;
 
     NSRunningApplication *_parentApplication; // the process id of the parent app (Open Emu or our debug helper)
@@ -75,7 +73,6 @@
     NSTimer              *_pollingTimer;
 
     // OE stuff
-    id                    _gameCoreProxy;
     OEGameCoreController *_gameController;
     OESystemController   *_systemController;
     OESystemResponder    *_systemResponder;
@@ -93,7 +90,6 @@
 }
 
 @synthesize enableVSync = _enableVSync;
-@synthesize gameCoreProxy = _gameCoreProxy;
 
 - (instancetype)init
 {
@@ -264,8 +260,6 @@
     _gameController = [[OECorePlugin corePluginWithBundleAtPath:pluginPath] controller];
     _gameCore = [_gameController newGameCore];
 
-    _gameCoreProxy = [[OEThreadProxy alloc] initWithTarget:_gameCore thread:[self makeGameCoreThread]];
-
     NSString *systemIdentifier = [_systemController systemIdentifier];
 
     [_gameCore setOwner:_gameController];
@@ -280,23 +274,24 @@
     [_gameCore setROMHeader:romHeader];
     [_gameCore setROMSerial:romSerial];
 
-    _systemResponder.client = _gameCoreProxy;
+    _systemResponder.client = _gameCore;
     _systemResponder.globalEventsHandler = self;
 
     _unhandledEventsMonitor = [[OEDeviceManager sharedDeviceManager] addUnhandledEventMonitorHandler:^(OEDeviceHandler *handler, OEHIDEvent *event) {
-        if (!_handleEvents)
+        if (!self->_handleEvents)
             return;
 
-        if (!_handleKeyboardEvents && event.type == OEHIDEventTypeKeyboard)
+        if (!self->_handleKeyboardEvents && event.type == OEHIDEventTypeKeyboard)
             return;
 
-        [_systemResponder handleHIDEvent:event];
+        [self->_systemResponder handleHIDEvent:event];
     }];
 
     DLog(@"Loaded bundle. About to load rom...");
 
     // Never extract arcade roms and .md roms (XADMaster identifies some as LZMA archives)
-    if(![systemIdentifier isEqualToString:@"openemu.system.arcade"] && ![[aPath pathExtension] isEqualToString:@"md"] && ![[aPath pathExtension] isEqualToString:@"nds"])
+    NSString *extension = aPath.pathExtension.lowercaseString;
+    if(![systemIdentifier isEqualToString:@"openemu.system.arcade"] && ![extension isEqualToString:@"md"] && ![extension isEqualToString:@"nds"] && ![extension isEqualToString:@"iso"])
         aPath = [self decompressedPathForRomAtPath:aPath];
 
     if([_gameCore loadFileAtPath:aPath error:error])
@@ -308,14 +303,17 @@
 
         return YES;
     }
-    else
-    {
-        NSLog(@"ROM did not load.");
-        _gameCore = nil;
-        _gameCoreProxy = nil;
 
-        return NO;
+    if (error && !*error) {
+        *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotLoadROMError userInfo:@{
+            NSLocalizedDescriptionKey: NSLocalizedString(@"The emulator could not load ROM.", @"Error when loading a ROM."),
+        }];
     }
+
+    NSLog(@"ROM did not load.");
+    _gameCore = nil;
+
+    return NO;
 }
 
 - (NSString *)decompressedPathForRomAtPath:(NSString *)aPath
@@ -390,40 +388,6 @@
     return tmpPath;
 }
 
-- (NSThread *)makeGameCoreThread
-{
-    return [[NSThread alloc] initWithTarget:self selector:@selector(OE_gameCoreThread:) object:nil];
-}
-
-- (void)OE_gameCoreThread:(id)anObject
-{
-    [_gameCore startEmulation];
-    [[NSThread currentThread] setName:@"org.openemu.core-thread"];
-    [[NSThread currentThread] setQualityOfService:NSQualityOfServiceUserInteractive];
-
-    void(^startEmulationHandler)(void) = _startEmulationHandler;
-    _startEmulationHandler = nil;
-
-    if (startEmulationHandler) {
-        // will be called on the first event loop go around
-        dispatch_async(dispatch_get_main_queue(), startEmulationHandler);
-    }
-
-    [_gameCore runGameLoop:self];
-
-    void(^stopEmulationHandler)(void) = _stopEmulationHandler;
-    _stopEmulationHandler = nil;
-
-    if (stopEmulationHandler) {
-        dispatch_async(dispatch_get_main_queue(), stopEmulationHandler);
-    }
-}
-
-- (void)OE_stopGameCoreThreadRunLoop:(id)anObject
-{
-    CFRunLoopStop(CFRunLoopGetCurrent());
-}
-
 - (OEIntSize)aspectSize
 {
     return [_gameCore aspectSize];
@@ -444,7 +408,9 @@
 
 - (void)setPauseEmulation:(BOOL)paused
 {
-    [[self gameCoreProxy] setPauseEmulation:paused];
+    [_gameCore performBlock:^{
+        [self->_gameCore setPauseEmulation:paused];
+    }];
 }
 
 - (void)setAudioOutputDeviceID:(AudioDeviceID)deviceID
@@ -455,85 +421,88 @@
 
 - (void)setupEmulationWithCompletionHandler:(void(^)(IOSurfaceID surfaceID, OEIntSize screenSize, OEIntSize aspectSize))handler;
 {
-    [_gameCore setupEmulation];
-    [self setupGameCoreAudioAndVideo];
+    [_gameCore setupEmulationWithCompletionHandler:^{
+        [self setupGameCoreAudioAndVideo];
 
-    if(handler) handler(_surfaceID, _screenSize, _previousAspectSize);
+        if(handler)
+            handler(self->_surfaceID, self->_screenSize, self->_previousAspectSize);
+    }];
 }
 
 - (void)startEmulationWithCompletionHandler:(void(^)(void))handler
 {
-    _startEmulationHandler = [handler copy];
-
-    NSThread *target = [_gameCoreProxy thread];
-    if (!target.executing) [target start];
+    [_gameCore startEmulationWithCompletionHandler:handler];
 }
 
 - (void)resetEmulationWithCompletionHandler:(void(^)(void))handler
 {
-    [[self gameCore] resetEmulation];
-    if(handler) handler();
+    [_gameCore resetEmulationWithCompletionHandler:handler];
 }
 
 - (void)stopEmulationWithCompletionHandler:(void(^)(void))handler
 {
-    _stopEmulationHandler = [handler copy];
     [_pollingTimer invalidate];
     _pollingTimer = nil;
 
-    [[self gameCore] stopEmulationWithCompletionHandler: ^{
-        NSThread *threadToKill = [_gameCoreProxy thread];
+    [_gameCore stopEmulationWithCompletionHandler: ^{
+        [self->_gameAudio stopAudio];
+        [self->_gameCore setRenderDelegate:nil];
+        [self->_gameCore setAudioDelegate:nil];
+        self->_gameCoreOwner = nil;
+        self->_gameCore      = nil;
+        self->_gameAudio     = nil;
 
-        [_gameAudio stopAudio];
-        [_gameCore setRenderDelegate:nil];
-        [_gameCore setAudioDelegate:nil];
-        _gameCoreOwner = nil;
-        _gameCoreProxy = nil;
-        _gameCore      = nil;
-        _gameAudio     = nil;
-
-        [self performSelector:@selector(OE_stopGameCoreThreadRunLoop:) onThread:threadToKill withObject:nil waitUntilDone:NO];
+        if (handler != nil)
+            handler();
     }];
 }
 
 - (void)saveStateToFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
 {
-    [[self gameCoreProxy] saveStateToFileAtPath:fileName completionHandler:block];
+    [_gameCore performBlock:^{
+        [self->_gameCore saveStateToFileAtPath:fileName completionHandler:block];
+    }];
 }
 
 - (void)loadStateFromFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
 {
-    [[self gameCoreProxy] loadStateFromFileAtPath:fileName completionHandler:block];
+    [_gameCore performBlock:^{
+        [self->_gameCore loadStateFromFileAtPath:fileName completionHandler:block];
+    }];
 }
 
 - (void)setCheat:(NSString *)cheatCode withType:(NSString *)type enabled:(BOOL)enabled;
 {
-    [[self gameCoreProxy] setCheat:cheatCode setType:type setEnabled:enabled];
+    [_gameCore performBlock:^{
+        [self->_gameCore setCheat:cheatCode setType:type setEnabled:enabled];
+    }];
 }
 
 - (void)setDisc:(NSUInteger)discNumber
 {
-    [[self gameCoreProxy] setDisc:discNumber];
+    [_gameCore performBlock:^{
+        [self->_gameCore setDisc:discNumber];
+    }];
 }
 
 - (void)handleMouseEvent:(OEEvent *)event
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [_systemResponder handleMouseEvent:event];
+        [self->_systemResponder handleMouseEvent:event];
     });
 }
 
 - (void)systemBindingsDidSetEvent:(OEHIDEvent *)event forBinding:(__kindof OEBindingDescription *)bindingDescription playerNumber:(NSUInteger)playerNumber
 {
     [self _updateBindingForEvent:event withBlock:^{
-        [_systemResponder systemBindingsDidSetEvent:event forBinding:bindingDescription playerNumber:playerNumber];
+        [self->_systemResponder systemBindingsDidSetEvent:event forBinding:bindingDescription playerNumber:playerNumber];
     }];
 }
 
 - (void)systemBindingsDidUnsetEvent:(OEHIDEvent *)event forBinding:(__kindof OEBindingDescription *)bindingDescription playerNumber:(NSUInteger)playerNumber
 {
     [self _updateBindingForEvent:event withBlock:^{
-        [_systemResponder systemBindingsDidUnsetEvent:event forBinding:bindingDescription playerNumber:playerNumber];
+        [self->_systemResponder systemBindingsDidUnsetEvent:event forBinding:bindingDescription playerNumber:playerNumber];
     }];
 }
 
@@ -546,10 +515,10 @@
         }
 
         OEDeviceHandlerPlaceholder *placeholder = event.deviceHandler;
-        NSMutableArray<void(^)(void)> *pendingBlocks = _pendingDeviceHandlerBindings[placeholder];
+        NSMutableArray<void(^)(void)> *pendingBlocks = self->_pendingDeviceHandlerBindings[placeholder];
         if (!pendingBlocks) {
             pendingBlocks = [NSMutableArray array];
-            _pendingDeviceHandlerBindings[placeholder] = pendingBlocks;
+            self->_pendingDeviceHandlerBindings[placeholder] = pendingBlocks;
         }
 
         [pendingBlocks addObject:[^{
@@ -689,11 +658,6 @@
     [_gameRenderer suspendFPSLimiting];
 }
 
-- (BOOL)enableVSync
-{
-    return _enableVSync;
-}
-
 - (void)setEnableVSync:(BOOL)enableVSync
 {
     _enableVSync = enableVSync;
@@ -778,6 +742,26 @@
 - (void)takeScreenshot:(id)sender
 {
     [self.gameCoreOwner takeScreenshot];
+}
+
+- (void)fastForwardGameplay:(BOOL)enable
+{
+    [self.gameCoreOwner fastForwardGameplay:enable];
+}
+
+- (void)rewindGameplay:(BOOL)enable
+{
+    [self.gameCoreOwner rewindGameplay:enable];
+}
+
+- (void)stepGameplayFrameForward:(id)sender
+{
+    [self.gameCoreOwner stepGameplayFrameForward];
+}
+
+- (void)stepGameplayFrameBackward:(id)sender
+{
+    [self.gameCoreOwner stepGameplayFrameBackward];
 }
 
 @end

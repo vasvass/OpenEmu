@@ -25,10 +25,9 @@
  */
 
 #import "OEPrefLibraryController.h"
-#import "OEApplicationDelegate.h"
 #import "OELibraryDatabase.h"
 #import "OEDBRom.h"
-#import "OEDBSystem.h"
+#import "OEDBSystem+CoreDataProperties.h"
 #import "OESystemPlugin.h"
 #import "OECorePlugin.h"
 #import "OESidebarOutlineView.h"
@@ -235,7 +234,14 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
                 }];
                 
                 // Setup error handler
-                [fm setErrorHandler:^BOOL(NSURL *src, NSURL *dst, NSError *error){ DLog(@"OEFM Error handler called on %@", src); return NO; }];
+                [fm setErrorHandler:^BOOL(NSURL *src, NSURL *dst, NSError *error) {
+                    // ignore failing metafiles
+                    if([src.lastPathComponent rangeOfString:@"._"].location == 0) return true;
+
+                    DLog(@"OEFM Error handler called on %@", src);
+                    
+                    return NO;
+                }];
 
                 // Copy artwork directory if it exists
                 if([artworkURL checkResourceIsReachableAndReturnError:nil] && !(success=[fm copyItemAtURL:artworkURL toURL:newArtworkURL error:&error]))
@@ -380,7 +386,7 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
                     [coord addPersistentStoreWithType:[store type] configuration:nil URL:[store URL] options:0 error:nil];
 
                     // Make sure to post notification on main thread!
-                    void (^postNotification)() = ^(){
+                    void (^postNotification)(void) = ^(){
                         [[OELibraryDatabase defaultDatabase] setPersistentStoreCoordinator:coord];
                         [[NSNotificationCenter defaultCenter] postNotificationName:OELibraryLocationDidChangeNotificationName object:self userInfo:nil];
                     };
@@ -461,7 +467,10 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
                               OEChangeCoreAlertSuppressionKey,
                               OEResetSystemAlertSuppressionKey,
                               OEStopEmulationAlertSuppressionKey,
+                              OEDeleteSaveStateAlertSuppressionKey,
+                              OEDeleteScreenshotAlertSuppressionKey,
                               OERemoveGameFilesFromLibraryAlertSuppressionKey,
+                              OERenameSpecialSaveStateAlertSuppressionKey,
                               OEGameCoreGlitchesSuppressionKey,
                               OEDownloadRomWarningSupperssionKey];
     
@@ -474,30 +483,29 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
 
 - (void)OE_rebuildAvailableLibraries
 {
-    NSRect visibleRect  = [[self librariesView] visibleRect];
-    BOOL rebuildingList = [[[self librariesView] subviews] count] != 0;
-    [[[[self librariesView] subviews] copy] makeObjectsPerformSelector:@selector(removeFromSuperviewWithoutNeedingDisplay)];
+    NSRect visibleRect  = self.librariesView.visibleRect;
+    BOOL rebuildingList = self.librariesView.subviews.count != 0;
+    [[self.librariesView.subviews copy] makeObjectsPerformSelector:@selector(removeFromSuperviewWithoutNeedingDisplay)];
 
     // get all system plugins, ordered them by name
-    NSManagedObjectContext *context = [[OELibraryDatabase defaultDatabase] mainThreadContext];
+    NSManagedObjectContext *context = OELibraryDatabase.defaultDatabase.mainThreadContext;
     NSArray *systems = [OEDBSystem allSystemsInContext:context];
 
     // calculate number of rows (using 2 columns)
-    NSInteger rows = ceil([systems count] / 2.0);
+    NSInteger rows = ceil(systems.count / 2.0);
 
     // set some spaces and dimensions
     CGFloat hSpace = 16, vSpace = 10;
     CGFloat iWidth = 163, iHeight = 18;
     CGFloat topGap = 16, bottomGap = 16;
 
-    if([self librariesView] == nil) return;
+    if(self.librariesView == nil) return;
 
     CGFloat height = (iHeight * rows + (rows - 1) * vSpace) + topGap + bottomGap;
-    NSView *clipview = self.librariesView.superview;
-    NSView *libview = self.librariesView;
-    [clipview removeConstraints:[clipview constraints]];
-    [clipview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"|[libview]|" options:0 metrics:nil views:NSDictionaryOfVariableBindings(libview)]];
-    [clipview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[libview(height)]" options:0 metrics:@{@"height": @(height)} views:NSDictionaryOfVariableBindings(libview)]];
+    
+    NSRect librariesViewFrame = self.librariesView.frame;
+    librariesViewFrame.size.height = height;
+    self.librariesView.frame = librariesViewFrame;
 
     __block CGFloat x = vSpace;
     __block CGFloat y = height-topGap;
@@ -519,23 +527,22 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
 
          // creating the button
          NSRect rect = NSMakeRect(x, y, iWidth, iHeight);
-         NSString *systemIdentifier = [system systemIdentifier];
+         NSString *systemIdentifier = system.systemIdentifier;
          OEButton *button = [[OEButton alloc] initWithFrame:rect];
          [button setThemeKey:@"dark_checkbox"];
-         [button setButtonType:NSSwitchButton];
-         [button setTarget:self];
-         [button setAction:@selector(toggleSystem:)];
-         [button setTitle:[system name]];
-         [button setState:[[system enabled] intValue]];
-         [[button cell] setRepresentedObject:systemIdentifier];
-
+         button.buttonType = NSSwitchButton;
+         button.target = self;
+         button.action = @selector(toggleSystem:);
+         button.title = system.name;
+         button.state = system.enabled.intValue;
+         button.cell.representedObject = systemIdentifier;
 
          // Check if a core is installed that is capable of running this system
          BOOL foundCore = NO;
-         NSArray *allPlugins = [OECorePlugin allPlugins];
+         NSArray *allPlugins = OECorePlugin.allPlugins;
          for(OECorePlugin *obj in allPlugins)
          {
-             if([[obj systemIdentifiers] containsObject:systemIdentifier])
+             if([obj.systemIdentifiers containsObject:systemIdentifier])
              {
                  foundCore = YES;
                  break;
@@ -546,41 +553,41 @@ NSString * const OELibraryLocationDidChangeNotificationName = @"OELibraryLocatio
          // e.g. Go to Cores preferences and download Core x
          // or we could add a "Fix This" button that automatically launches the "No core for system ... " - Dialog
          NSMutableArray *warnings = [NSMutableArray arrayWithCapacity:2];
-         if([system plugin] == nil)
+         if(system.plugin == nil)
          {
              [warnings addObject:NSLocalizedString(@"The System plugin could not be found!", @"")];
 
              // disabling ui element here so no system without a plugin can be enabled
-             [button setEnabled:NO];
+             button.enabled = NO;
          }
 
          if(!foundCore)
              [warnings addObject:NSLocalizedString(@"This System has no corresponding core installed.", @"")];
 
-         if([warnings count] != 0)
+         if(warnings.count != 0)
          {
              // Show a warning badge next to the checkbox
              // this is currently misusing the beta_icon image
 
-             NSPoint badgePosition = [button badgePosition];
+             NSPoint badgePosition = button.badgePosition;
              NSImageView *imageView = [[NSImageView alloc] initWithFrame:(NSRect){ badgePosition, { 16, 17 } }];
-             [imageView setImage:[NSImage imageNamed:@"beta_icon"]];
+             imageView.image = [NSImage imageNamed:@"beta_icon"];
 
              // TODO: Use a custom tooltip that fits our style better
-             [imageView setToolTip:[warnings componentsJoinedByString:@"\n"]];
-             [[self librariesView] addSubview:imageView];
+             imageView.toolTip = [warnings componentsJoinedByString:@"\n"];
+             [self.librariesView addSubview:imageView];
          }
 
-         [[self librariesView] addSubview:button];
+         [self.librariesView addSubview:button];
 
          // leave a little gap before we start the next item
          y -= vSpace;
      }];
 
     if(!rebuildingList)
-        [[self librariesView] scrollPoint:NSMakePoint(0, height)];
+        [self.librariesView scrollPoint:NSMakePoint(0, height)];
     else
-        [[self librariesView] scrollRectToVisible:visibleRect];
+        [self.librariesView scrollRectToVisible:visibleRect];
 }
 
 @end

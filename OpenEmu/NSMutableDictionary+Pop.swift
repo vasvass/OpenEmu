@@ -26,11 +26,11 @@
 
 import Foundation
 
-extension NSMutableDictionary {
+@objc extension NSMutableDictionary {
     
-    func popObjectForKey(key: String) -> AnyObject? {
+    func popObjectForKey(_ key: String) -> AnyObject? {
         let result = self[key]
-        removeObjectForKey(key)
-        return result
+        removeObject(forKey: key)
+        return result as AnyObject?
     }
 }

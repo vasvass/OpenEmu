@@ -35,6 +35,7 @@
 #import "OESystemPlugin.h"
 
 #import "NSFileManager+OEHashingAdditions.h"
+#import "NSArray+OEAdditions.h"
 
 #import <CommonCrypto/CommonDigest.h>
 #import <OpenEmuSystem/OpenEmuSystem.h>
@@ -47,7 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark User Default Keys -
 
-NSString *const OEOrganizeLibraryKey       = @"organizeLibrary";
 NSString *const OECopyToLibraryKey         = @"copyToLibrary";
 NSString *const OEAutomaticallyGetInfoKey  = @"automaticallyGetInfo";
 
@@ -78,7 +78,6 @@ NSString *const OEImportErrorDomainSuccess    = @"OEImportSuccessDomain";
     if(self != [OEROMImporter class]) return;
 
     NSDictionary *defaults = @{
-                              OEOrganizeLibraryKey      : @(YES),
                               OECopyToLibraryKey        : @(YES),
                               OEAutomaticallyGetInfoKey : @(YES),
                               };

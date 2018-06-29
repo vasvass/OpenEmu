@@ -38,11 +38,12 @@
 #import "OEDBSystem.h"
 #import "OEDBSmartCollection.h"
 #import "OEGameCollectionViewItemProtocol.h"
-#import "OEGameScannerViewController.h"
 
 #import "OEHUDAlert.h"
 
 #import "OEROMImporter.h"
+
+#import "NSArray+OEAdditions.h"
 
 #import "OpenEmu-Swift.h"
 
@@ -527,16 +528,15 @@ NSString * const OEMainViewMinWidth = @"mainViewMinWidth";
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item
 {
-    if (!item)
+    if (item) {
+        NSString *autosaveName = [item isKindOfClass:[OESidebarGroupItem class]] ? ((OESidebarGroupItem *)item).autosaveName : nil;
+        if ([autosaveName isEqualToString:OESidebarGroupConsolesAutosaveName])
+            return self.systems[index];
+        else
+            return self.collections[index];
+    } else {
         return self.groups[index];
-
-    NSString *autosaveName = [item isKindOfClass:[OESidebarGroupItem class]] ? ((OESidebarGroupItem *)item).autosaveName : nil;
-    if ([autosaveName isEqualToString:OESidebarGroupConsolesAutosaveName])
-        return self.systems[index];
-    else if ([autosaveName isEqualToString:OESidebarGroupCollectionsAutosaveName])
-        return self.collections[index];
-
-    return nil;
+    }
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item

@@ -26,6 +26,7 @@
 
 @import Foundation;
 @import CoreData;
+@import Quartz;
 #import "OEDBItem.h"
 
 @class OEDBRom;
@@ -34,16 +35,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString * const OEDBScreenshotImportRequired;
 
-@interface OEDBScreenshot: OEDBItem <NSPasteboardWriting>
+@interface OEDBScreenshot: OEDBItem <NSPasteboardWriting, QLPreviewItem>
 
 + (nullable instancetype)createObjectInContext:(NSManagedObjectContext *)context forROM:(OEDBRom *)rom withFile:(NSURL *)fileURL;
 - (void)updateFile;
-
-@property (nonatomic, retain, nullable) NSString *location;
-@property (nonatomic, retain, nullable) NSString *name;
-@property (nonatomic, retain, nullable) NSDate *timestamp;
-@property (nonatomic, retain, nullable) NSString *userDescription;
-@property (nonatomic, retain, nullable) OEDBRom *rom;
 
 @property (nonatomic, assign) NSURL *URL;
 @end

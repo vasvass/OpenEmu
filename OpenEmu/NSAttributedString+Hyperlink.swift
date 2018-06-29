@@ -31,12 +31,12 @@ extension NSAttributedString {
     /// Returns an attributed string containing a hyperlink.
     /// - Parameter string: The text to use for the hyperlink.
     /// - Parameter URL: The URL of the hyperlink.
-    convenience init(string: String, hyperlinkURL URL: NSURL) {
+    convenience init(string: String, hyperlinkURL URL: Foundation.URL) {
         
-        let attributes = [
-            NSLinkAttributeName: URL.absoluteString,
-            NSForegroundColorAttributeName: NSColor.blueColor(),
-            NSUnderlineStyleAttributeName: NSUnderlineStyle.StyleSingle.rawValue
+        let attributes: [NSAttributedStringKey: Any] = [
+            .link: URL.absoluteString,
+            .foregroundColor: NSColor.blue,
+            .underlineStyle: NSUnderlineStyle.styleSingle.rawValue
         ]
         
         self.init(string: string, attributes: attributes)

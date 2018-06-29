@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import Cocoa
 
-extension NSWindow {
+@objc extension NSWindow {
     
     var imageSnapshot: NSImage {
         
@@ -39,22 +39,22 @@ extension NSWindow {
             
             image.lockFocus()
             
-            NSColor.blackColor().set()
-            NSRectFill(NSRect(x: 0, y: 0, width: 1, height: 1))
+            NSColor.black.set()
+            NSRect(x: 0, y: 0, width: 1, height: 1).fill()
             
             image.unlockFocus()
             
             return image
         }
         
-        let cgImage = CGWindowListCreateImage(CGRectNull,
-            .OptionIncludingWindow,
-            CGWindowID(windowNumber),
-            .BoundsIgnoreFraming)!
+        let cgImage = CGWindowListCreateImage(CGRect.null,
+                                              .optionIncludingWindow,
+                                              CGWindowID(windowNumber),
+                                              .boundsIgnoreFraming)!
         
-        let image = NSImage(CGImage: cgImage, size: self.frame.size)
+        let image = NSImage(cgImage: cgImage, size: frame.size)
         
-        image.cacheMode = .Never
+        image.cacheMode = .never
         
         return image
     }

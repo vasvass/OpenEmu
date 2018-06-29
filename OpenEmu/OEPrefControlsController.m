@@ -25,7 +25,6 @@
  */
 
 #import "OEPrefControlsController.h"
-#import "OEBackgroundGradientView.h"
 #import "OEBackgroundImageView.h"
 #import "OELibraryDatabase.h"
 
@@ -465,8 +464,8 @@ static CFHashCode _OEHIDEventHashSetCallback(OEHIDEvent *value)
 
     [CATransaction begin];
     [CATransaction setCompletionBlock:^{
-        if(_controllerView != nil)
-            [[self controllerContainerView] replaceSubview:_controllerView with:newControllerView];
+        if(self->_controllerView != nil)
+            [[self controllerContainerView] replaceSubview:self->_controllerView with:newControllerView];
         else
             [[self controllerContainerView] addSubview:newControllerView];
         [self setControllerView:newControllerView];
@@ -611,12 +610,6 @@ static CFHashCode _OEHIDEventHashSetCallback(OEHIDEvent *value)
     // Ignore any off state events
     if([anEvent hasOffState] || [self selectedKey] == nil) return;
 
-    if([anEvent isEscapeKeyEvent])
-    {
-        [[self currentPlayerBindings] removeEventForKeyWithName:[self selectedKey]];
-        return;
-    }
-
     [self OE_setCurrentBindingsForEvent:anEvent];
 
     id assignedKey = [[self currentPlayerBindings] assignEvent:anEvent toKeyWithName:[self selectedKey]];
@@ -631,6 +624,11 @@ static CFHashCode _OEHIDEventHashSetCallback(OEHIDEvent *value)
 
 - (void)keyDown:(NSEvent *)theEvent
 {
+    if ([self selectedKey] == nil)
+        return;
+    
+    if ([theEvent keyCode] == kVK_Escape)
+        [[self currentPlayerBindings] removeEventForKeyWithName:[self selectedKey]];
 }
 
 - (void)keyUp:(NSEvent *)theEvent
@@ -670,9 +668,13 @@ static CFHashCode _OEHIDEventHashSetCallback(OEHIDEvent *value)
         return NO;
     }
 
+    // Esc-key events are handled through NSEvent
+    if ([anEvent isEscapeKeyEvent])
+        return NO;
+
     // Ignore keyboard events if the user hasn’t explicitly chosen to configure
     // keyboard bindings. See https://github.com/OpenEmu/OpenEmu/issues/403
-    if([anEvent type] == OEHIDEventTypeKeyboard && ![self isKeyboardEventSelected] && ![anEvent isEscapeKeyEvent])
+    if([anEvent type] == OEHIDEventTypeKeyboard && ![self isKeyboardEventSelected])
         return NO;
 
     // No event currently read, if it's not off state, store it and read it

@@ -28,14 +28,13 @@
 
 #import "OEGameCollectionViewController.h"
 #import "OESidebarController.h"
-#import "OEGameScannerViewController.h"
 #import "OEButton.h"
 #import "OESearchField.h"
 #import "OELibrarySplitView.h"
 #import "OELibraryController.h"
 
 #import "OEDBCollection.h"
-#import "OEDBSystem.h"
+#import "OEDBSystem+CoreDataProperties.h"
 
 #import "OESystemPlugin.h"
 
@@ -217,21 +216,7 @@ NSString * const OESkipDiscGuideMessageKey = @"OESkipDiscGuideMessageKey";
 #pragma mark - Issue Resolving
 - (IBAction)showIssuesView:(id)sender
 {
-    NSView *container  = [self collectionViewContainer];
-    NSView *issuesView = [[self gameScannerController] view];
-
-    if([[container subviews] containsObject:issuesView])
-        return;
-
-    [container addSubview:issuesView positioned:NSWindowAbove relativeTo:NULL];
-    [issuesView setFrame:[container bounds]];
-    
-    // Disable toolbar controls.
-    OELibraryToolbar *toolbar = [[self libraryController] toolbar];
-    [[toolbar categorySelector] setEnabled:NO];
-    [[toolbar gridViewButton] setEnabled:NO];
-    [[toolbar listViewButton] setEnabled:NO];
-    [[toolbar gridSizeSlider] setEnabled:NO];
-    [[toolbar searchField] setEnabled:NO];
+    [self presentViewControllerAsSheet:self.gameScannerController];
 }
+
 @end
